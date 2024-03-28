@@ -40,6 +40,7 @@
 
 */
 
+#include <Wire.h>
 // include the library code:
 #include <LiquidCrystal.h>
 
@@ -49,16 +50,47 @@ const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup() {
+  Wire.begin(4);                  // join i2c bus with address 4
+  Wire.onReceive(receiveEvent);   // register event
+  Serial.begin(9600);             // start serial for output
+  
+  lcd.begin(20,4);
+  
+  /* ---Tutorial sample code--- 
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("hello, world!");
+  */
 }
 
 void loop() {
+  
+  
+  /* ---Tutorial sample code---
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
   lcd.setCursor(0, 1);
   // print the number of seconds since reset:
   lcd.print(millis() / 1000);
+  */
 }
+
+void receiveEvent(int num) {
+  String message="";
+  
+  // print stuff
+  while (Wire.available() > 1) {
+    char c = Wire.read();
+    message += c;
+    Serial.print(c);
+  }
+  int x = Wire.read();
+  message += char(x);
+  Serial.println(x);
+
+  lcd.print(message);
+
+}
+
+// https://docs.arduino.cc/learn/communication/wire/
