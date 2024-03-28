@@ -33,6 +33,7 @@ int cardsPerHand, numPlayers=4, cardSpeed;
 void DealOneCard(void);
 int RotateBase(float rotDegrees);
 int MovePlatform(float rotDegrees);
+int SendLCD(int cardsDealt, int numPlayers, char gameType);
 
 void TurnCW(void);
 void TurnCCW(void);
@@ -46,7 +47,7 @@ void setup() {
 
   // Initialize Serial communication
   Serial.begin(9600);
-  Wire.begin();
+  Wire.begin();             // join i2c bus
 
   Serial.setTimeout(50);
   delay(100);
@@ -77,6 +78,9 @@ void loop() {
         // **to do** rotate to each player who wants a card hit, skip players that stand
       }
       
+    } else if (gameType.charAt(0) == 'x'){
+      gameType.remove(0,1);
+      SendLCD(3,4,"p");
     } else if (gameType.charAt(0) == 'z'){
       gameType.remove(0,1);
       MovePlatform(gameType.toInt());
@@ -126,6 +130,34 @@ void EncoderEvent() {
   }
 }
 
+int SendLCD(int cardsDealt, int numPlayers, char gameType, bool sameGame){
+  // Update the LCD as cards are being dealt. If there is a new game, also update name of game 
+  Wire.beginTransmission(4);          // transmit to device address #4
+  
+  if (sameGame) {
+    Wire.write("Cards dealt: ");        // sends 13(?) bytes
+    Wire.write(cardsDealt);             // sends 1 byte
+
+  } else {
+    Wire.write("Game: ");
+    if (gameType.charAt(0) == 'p') {
+      Wire.write("POKER");
+    } else if (gameType.charAt(0) == 'u') {
+      Wire.write("UNO");
+    } else if (gameType.charAt(0) == 'b') {
+      Wire.write("BIG TWO");
+    } else if (gameType.charAt(0) == 'l') {
+      Wire.write("BLACKJACK");
+    }
+
+    Wire.write("Players: ");
+    Wire.write(numPlayers);
+  }
+
+  Wire.endTransmission();
+  delay(500);
+}
+
 int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
   // call RotateBase - calculate degrees needed to spin based on numPlayers
@@ -135,8 +167,8 @@ int DealCards(int cardsPerHand, int numPlayers) {
   for (int i=0; i<cardsPerHand; i++){
     for (int j=0; j<numPlayers; j++) {
       RotateBase(360/numPlayers);
-      delay(400);
       DealOneCard();
+      delay(400);
 //      Serial.print("card(s) dealt: ");
 //      Serial.println(j);
     } 
