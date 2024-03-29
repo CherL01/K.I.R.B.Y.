@@ -1,16 +1,8 @@
 /*
   Melody
-
-  Plays a melody
-
-  circuit:
   - 8 ohm speaker on digital pin 8 & ground
 
-  created 21 Jan 2010
-  modified 30 Aug 2011
-  by Tom Igoe
-
-  This example code is in the public domain.
+  includes "ezBuzzer" library
 
   https://www.arduino.cc/en/Tutorial/BuiltInExamples/toneMelody
 */
@@ -24,30 +16,35 @@ ezBuzzer buzzer(musicPin);
 
 int noteIndex;
 
-// Dealing melody
+// Dealing Melody: KIRBY Dreamland Theme song
 int dealMelody[] = {
-  NOTE_C4, NOTE_C4, NOTE_G4, NOTE_G4, NOTE_A4, NOTE_A4, NOTE_G4, NOTE_F4, NOTE_F4, NOTE_E4, NOTE_E4,
-  NOTE_D4, NOTE_D4, NOTE_C4, NOTE_G4, NOTE_G4, NOTE_F4, NOTE_F4, NOTE_E4, NOTE_E4, NOTE_D4,
-  NOTE_G4, NOTE_G4, NOTE_F4, NOTE_F4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_C4, NOTE_C4, NOTE_G4, NOTE_G4,
-  NOTE_A4, NOTE_A4, NOTE_G4, NOTE_F4, NOTE_F4, NOTE_E4, NOTE_E4, NOTE_D4, NOTE_D4, NOTE_C4
+  NOTE_E5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_E4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, NOTE_E4, NOTE_A4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0, 
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_B4, NOTE_D5, NOTE_E5, NOTE_A4, NOTE_B4, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, 0
 };
 
 // Dealing melody note durations: 4 = quarter note, 8 = eighth note, etc.:
 int dealNoteDurations[] = {
-  4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4,
-  4, 4, 2, 4, 4, 4, 4, 4, 4, 2,
-  4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 4,
-  4, 4, 2, 4, 4, 4, 4, 4, 4, 2
+  4, 8, 8, 8, 8, 4, 8, 8, 8, 8, 4, 4,          
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 8, 8, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2 
 };
 
-// End of melody 
+// End Melody: KIRBY Victory song
 int endMelody[] = {
-  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, 0, NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, 0, NOTE_E5, 0, 
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, NOTE_G5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_C5, NOTE_C6, 0  
+
 };
 
 // End melody note durations: 4 = quarter note, 8 = eighth note, etc.:
 int endNoteDurations[] = {
-  4, 8, 8, 4, 4, 4, 4, 4
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 8, 8, 8, 8, 8, 8, 4, 8, 4, 8,
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 4, 8, 4, 8, 3, 8, 4
 };
 
 int noteLength;
@@ -109,7 +106,7 @@ void musicEnd() //play music when done dealing
 //    noTone(musicPin);
 //  }
 
-  buzzer.loop();
+  //buzzer.loop(); //try without looping or use the previous code for 1 iteration of melody
   noteLength = sizeof(endNoteDurations) /sizeof(int);
 
   if (buzzer.getState() == BUZZER_IDLE)
