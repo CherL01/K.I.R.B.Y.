@@ -104,6 +104,9 @@ void setup() {
     delay(10000);
   }
 
+  printWifiStatus();
+  
+
   Serial.setTimeout(50);
   delay(100);
 }
@@ -150,11 +153,11 @@ void loop() {
       MovePlatform(gameType.toInt());
     } else {
       Serial.println("Invalid gamemode. Please try again...");
-    }*/
+    }
     
-  }
+  }*/
   delay(20);
-  Serial.println(gameType);
+  //Serial.println(gameType);
   // Serial.println(baseMotorCount);
 }
 
@@ -245,7 +248,7 @@ int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
   // Iterate for each card needed to be dealt
   for (int i=0; i<cardsPerHand; i++){
-    SendLCD(i,numPlayers,gameType,true);
+    //SendLCD(i,numPlayers,gameType,true);
 
     // Iterate for each player
     for (int j=0; j<numPlayers; j++) {
@@ -390,7 +393,7 @@ void webServer() {
       page.replace("GAME_TYPE", gameType);
 
       //----------------------Deal cards HERE
-      checkGame();
+      //checkGame(gameType);
     }
     
     else if (header.indexOf("GET /default") >=0)
@@ -403,8 +406,8 @@ void webServer() {
       gameType = "UNO";
       //----------------------Starting Page HERE (Stop)
 
-      DisableMotors();
-      eStopLCD();
+      //DisableMotors();
+      //eStopLCD();
       
     }
     else if (header.indexOf("GET /speed") >= 0) //access index of header to get the speed/#of players/game type values.
@@ -459,8 +462,8 @@ void webServer() {
       
       page = String(START_PAGE);
       //----------------------Settting Page HERE
-      DisableMotors();
-      eStopLCD();
+      //DisableMotors();
+      //eStopLCD();
     }
 
     
