@@ -1,50 +1,116 @@
 /*
   Melody
+  - 8 ohm speaker on digital pin 8 & ground
 
-  Plays a melody
-
-  circuit:
-  - 8 ohm speaker on digital pin 8
-
-  created 21 Jan 2010
-  modified 30 Aug 2011
-  by Tom Igoe
-
-  This example code is in the public domain.
+  includes "ezBuzzer" library
 
   https://www.arduino.cc/en/Tutorial/BuiltInExamples/toneMelody
 */
 
 #include "pitches.h"
+#include <ezBuzzer.h>
 
-// notes in the melody:
-int melody[] = {
-  NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
+const int musicPin = 8;
+
+ezBuzzer buzzer(musicPin);
+
+int noteIndex;
+
+// Dealing Melody: KIRBY Dreamland Theme song
+int dealMelody[] = {
+  NOTE_E5, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_E4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, NOTE_E4, NOTE_A4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0, 
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_B4, NOTE_D5, NOTE_E5, NOTE_A4, NOTE_B4, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, 0
 };
 
-// note durations: 4 = quarter note, 8 = eighth note, etc.:
-int noteDurations[] = {
-  4, 8, 8, 4, 4, 4, 4, 4
+// Dealing melody note durations: 4 = quarter note, 8 = eighth note, etc.:
+int dealNoteDurations[] = {
+  4, 8, 8, 8, 8, 4, 8, 8, 8, 8, 4, 4,          
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 8, 8, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2 
 };
+
+// End Melody: KIRBY Victory song
+int endMelody[] = {
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, 0, NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, 0, NOTE_E5, 0, 
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, NOTE_G5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_C5, NOTE_C6, 0  
+
+};
+
+// End melody note durations: 4 = quarter note, 8 = eighth note, etc.:
+int endNoteDurations[] = {
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 8, 8, 8, 8, 8, 8, 4, 8, 4, 8,
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 4, 8, 4, 8, 3, 8, 4
+};
+
+int noteLength;
 
 void setup() {
-  // iterate over the notes of the melody:
-  for (int thisNote = 0; thisNote < 8; thisNote++) {
+  Serial.begin(9600);
+  
 
-    // to calculate the note duration, take one second divided by the note type.
-    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-    int noteDuration = 1000 / noteDurations[thisNote];
-    tone(8, melody[thisNote], noteDuration);
-
-    // to distinguish the notes, set a minimum time between them.
-    // the note's duration + 30% seems to work well:
-    int pauseBetweenNotes = noteDuration * 1.30;
-    delay(pauseBetweenNotes);
-    // stop the tone playing:
-    noTone(8);
-  }
 }
 
 void loop() {
-  // no need to repeat the melody.
+  musicEnd();
+  delay(200);
+  musicDeal();
+}
+
+void musicDeal() //play music during dealing
+{
+//  for (noteIndex = 0; noteIndex < sizeof(dealMelody); noteIndex++) 
+//  {
+//
+//    // to calculate the note duration, take one second divided by the note type.
+//    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+//    int noteDuration = 1000 / dealNoteDurations[noteIndex];
+//    tone(musicPin, dealMelody[noteIndex], noteDuration);
+//
+//    // to distinguish the notes, set a minimum time between them.
+//    // the note's duration + 30% seems to work well:
+//    int pauseBetweenNotes = noteDuration * 1.30;
+//    delay(pauseBetweenNotes);
+//    // stop the tone playing:
+//    noTone(musicPin);
+//  }
+  
+  buzzer.loop();
+  noteLength = sizeof(dealNoteDurations) /sizeof(int);
+
+  if (buzzer.getState() == BUZZER_IDLE)
+  {
+    buzzer.playMelody(dealMelody, dealNoteDurations, noteLength);
+  }
+}
+
+void musicEnd() //play music when done dealing
+{
+//  for (noteIndex = 0; noteIndex < sizeof(endMelody); noteIndex++) 
+//  {
+//
+//    // to calculate the note duration, take one second divided by the note type.
+//    //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
+//    int noteDuration = 1000 / endNoteDurations[noteIndex];
+//    tone(musicPin, endMelody[noteIndex], noteDuration);
+//
+//    // to distinguish the notes, set a minimum time between them.
+//    // the note's duration + 30% seems to work well:
+//    int pauseBetweenNotes = noteDuration * 1.30;
+//    delay(pauseBetweenNotes);
+//    // stop the tone playing:
+//    noTone(musicPin);
+//  }
+
+  //buzzer.loop(); //try without looping or use the previous code for 1 iteration of melody
+  noteLength = sizeof(endNoteDurations) /sizeof(int);
+
+  if (buzzer.getState() == BUZZER_IDLE)
+  {
+    buzzer.playMelody(endMelody, endNoteDurations, noteLength);
+  }
 }
