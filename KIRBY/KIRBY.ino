@@ -42,7 +42,7 @@ int cardEncA=4;         // need interrupt pin -- enc values not really needed - 
 int cardEncB=5;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
-int baseMotorSpeed = 60;           // Speed of motor 0-255
+int baseMotorSpeed = 80;           // Speed of motor 0-255
 int cardMotorSpeed = 80;           // Speed of motor 0-255
 float degEncRatio = 1.8;     // 360 deg / 200 enc -> 1.8 deg per enc val
 int encValError = 6;
@@ -248,8 +248,9 @@ int eStopLCD()
 int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
   // Iterate for each card needed to be dealt
+  SendLCD(0,numPlayers,gameType,false);
   for (int i=0; i<cardsPerHand; i++){
-    //SendLCD(i,numPlayers,gameType,true);
+    SendLCD(i,numPlayers,gameType,true);
 
     // Iterate for each player
     for (int j=0; j<numPlayers; j++) {
@@ -339,7 +340,7 @@ void checkGame(String gameType) //games: uno, blackJack, crazy8, poker
   if (gameType.indexOf("uno") == 0)
   {
     Serial.println("Dealing uno");
-    DealCards(2, 4);
+    DealCards(6, 4);
   }
 }
 
@@ -494,8 +495,9 @@ void webServer() {
     client.flush();
 
     delay(10);
+    //if (header.indexOf("GET /on") >=0){
     checkGame(gameType);
-
+    //}
     client.stop();
     // Clear the header variable
     header = "";

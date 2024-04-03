@@ -64,7 +64,7 @@ void setup() {
   // Print a message to the LCD.
   
   */
-  lcd.print("Hi! I am KIRBY. ");
+  lcd.print("Hi! I am KIRBY. <3");
 }
 
 void loop() {
