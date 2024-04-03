@@ -364,6 +364,7 @@ void printWifiStatus() {
   Serial.print("/default");
 }
 
+//---WIFI/HTML FUNCTIONS---
 void webServer() {
   WiFiClient client = server.available();   // Listen for incoming clients
   if (client) {                             // If a new client connects,
@@ -393,7 +394,6 @@ void webServer() {
       page.replace("GAME_TYPE", gameType);
 
       //----------------------Deal cards HERE
-      //checkGame(gameType);
     }
     
     else if (header.indexOf("GET /default") >=0)
@@ -404,10 +404,7 @@ void webServer() {
       cardSpeed = 5; //default cardspeed and numplayers
       numPlayers = 2;
       gameType = "UNO";
-      //----------------------Starting Page HERE (Stop)
-
-      //DisableMotors();
-      //eStopLCD();
+      //----------------------Starting Page HERE
       
     }
     else if (header.indexOf("GET /speed") >= 0) //access index of header to get the speed/#of players/game type values.
@@ -462,8 +459,6 @@ void webServer() {
       
       page = String(START_PAGE);
       //----------------------Settting Page HERE
-      //DisableMotors();
-      //eStopLCD();
     }
 
     
@@ -505,3 +500,4 @@ void webServer() {
     Serial.println("");
   }
 }
+
