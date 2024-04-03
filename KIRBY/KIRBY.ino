@@ -7,20 +7,21 @@
 Servo PlatformServo;
 
 // Define DC motor connections
-int baseMotorPin=10;     // int
-int baseMotorIn1=11;     // no int
-int baseMotorIn2=12;     // no int
-int baseEncA=2;         // need int
-int baseEncB=9;         // no int
+int baseMotorPin=10;     // pwm
+int baseMotorIn1=11;     // no pwm
+int baseMotorIn2=12;     // no pwm
+int baseEncA=2;         // need interrupt pin
+int baseEncB=9;         // no pwm
 
-int cardMotorPin;     // int?
-int cardMotorIn1;     // no int -- also idk if this even has an encoder
-int cardMotorIn2;     // no int
-int cardEncA;         // need int
-int cardEncB;         // no int
+int cardMotorPin=6;     // pwm
+int cardMotorIn1=7;     // no pwm -------------- direction pin (needed)
+int cardMotorIn2=8;     // no pwm -------------- direction pin (needed)
+int cardEncA=4;         // need interrupt pin -- enc values not really needed - needed if turning motor on and off too inconsistent
+int cardEncB=5;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
 int baseMotorSpeed = 60;           // Speed of motor 0-255
+int cardMotorSpeed = 80;           // Speed of motor 0-255
 float degEncRatio = 1.8;     // 360 deg / 200 enc -> 1.8 deg per enc val
 int encValError = 6;
 
@@ -33,7 +34,7 @@ int cardsPerHand, numPlayers=4, cardSpeed;
 void DealOneCard(void);
 int RotateBase(float rotDegrees);
 int MovePlatform(float rotDegrees);
-int SendLCD(int cardsDealt, int numPlayers, char gameType);
+int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame);
 
 void TurnCW(void);
 void TurnCCW(void);
@@ -54,7 +55,7 @@ void setup() {
 }
 
 void loop() {
-  // get input from Harry's website page
+  // get input from Harry's website page - need to figure this out
   // inputs: cardSpeed, numPlayers, gameType (poker, go fish, big 2, etc)
 
   // testing
@@ -65,22 +66,30 @@ void loop() {
       // Poker: 2 cards per player, x players
       Serial.println("Dealing poker");
       DealCards(2, numPlayers);
+      
     } else if (gameType.charAt(0) == 'u') {
       // Uno: 7 cards per player, x players
       DealCards(7, numPlayers);
+      
     } else if (gameType.charAt(0) == 'b') {
+      // Big two or Blackjack
       if (gameType.charAt(1) == 'i') {
         // Big two: 13 cards per player, 4 players
         DealCards(13, 4);
+        
       } else if (gameType.charAt(1) == 'l') {
         // Blackjack: 2 cards per player, x players (including dealer)
         DealCards(2, numPlayers);
         // **to do** rotate to each player who wants a card hit, skip players that stand
       }
-      
+
+    // test prompts
     } else if (gameType.charAt(0) == 'x'){
       gameType.remove(0,1);
-      SendLCD(3,4,"p");
+      SendLCD(gameType.toInt(),4,"b",false);
+    } else if (gameType.charAt(0) == 'y'){
+      gameType.remove(0,1);
+      SendLCD(gameType.toInt(),4,"b",true);
     } else if (gameType.charAt(0) == 'z'){
       gameType.remove(0,1);
       MovePlatform(gameType.toInt());
@@ -89,9 +98,9 @@ void loop() {
     }
     
   }
-  Serial.println(gameType);
   delay(20);
-  Serial.println(baseMotorCount);
+  Serial.println(gameType);
+  // Serial.println(baseMotorCount);
 }
 
 void InitMotors(void){
@@ -99,13 +108,13 @@ void InitMotors(void){
   pinMode(baseMotorPin, OUTPUT);
   pinMode(baseMotorIn1, OUTPUT);
   pinMode(baseMotorIn2, OUTPUT);
-//  pinMode(cardMotorPin, OUTPUT);
-//  pinMode(cardMotorIn1, OUTPUT);
-//  pinMode(cardMotorIn2, OUTPUT);
+  pinMode(cardMotorPin, OUTPUT);
+  pinMode(cardMotorIn1, OUTPUT);
+  pinMode(cardMotorIn2, OUTPUT);
 
   // Servo motor setup
-//  platformServo.write(180);     // set default position?
-  PlatformServo.attach(5);       // need pwm pins
+  platformServo.write(180);     // set default position?
+  PlatformServo.attach(3);       // need pwm pin
 }
 
 void InitInterrupts(void){
@@ -130,13 +139,16 @@ void EncoderEvent() {
   }
 }
 
-int SendLCD(int cardsDealt, int numPlayers, char gameType, bool sameGame){
+int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
   // Update the LCD as cards are being dealt. If there is a new game, also update name of game 
+  // Input: cardsDealt, numPlayers, gameType, sameGame
+  // Output: LCD gets text that is sent between beginTransmission to endTransmission
+
   Wire.beginTransmission(4);          // transmit to device address #4
   
   if (sameGame) {
     Wire.write("Cards dealt: ");        // sends 13(?) bytes
-    Wire.write(cardsDealt);             // sends 1 byte
+    Wire.write(byte(cardsDealt));             // sends 1 byte
 
   } else {
     Wire.write("Game: ");
@@ -149,9 +161,16 @@ int SendLCD(int cardsDealt, int numPlayers, char gameType, bool sameGame){
     } else if (gameType.charAt(0) == 'l') {
       Wire.write("BLACKJACK");
     }
-
+    Wire.endTransmission();
+    
+    Wire.beginTransmission(4);
     Wire.write("Players: ");
-    Wire.write(numPlayers);
+    Wire.write(byte(numPlayers));
+    Wire.endTransmission();
+    
+    Wire.beginTransmission(4);
+    Wire.write("Cards dealt: ");
+    Wire.write(byte(cardsDealt));
   }
 
   Wire.endTransmission();
@@ -160,11 +179,11 @@ int SendLCD(int cardsDealt, int numPlayers, char gameType, bool sameGame){
 
 int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
-  // call RotateBase - calculate degrees needed to spin based on numPlayers
-    // ex. 6 players: 360/6 = 60 deg --> spin 60 deg before dealing every card
-  // call DealOneCard
-    // stop when numPlayers all have cardsPerHand
+  // Iterate for each card needed to be dealt
   for (int i=0; i<cardsPerHand; i++){
+    SendLCD(i,numPlayers,gameType,true);
+
+    // Iterate for each player
     for (int j=0; j<numPlayers; j++) {
       RotateBase(360/numPlayers);
       DealOneCard();
@@ -177,21 +196,25 @@ int DealCards(int cardsPerHand, int numPlayers) {
 
 void DealOneCard(void) {
   // spin the card motor to shoot one card out, delay, then turn off.
-//  digitalWrite(cardMotorIn1, HIGH);
-//  digitalWrite(cardMotorIn2, LOW);
-//  analogWrite(cardMotorPin, baseMotorSpeed);
-  
+  digitalWrite(cardMotorIn1, HIGH);
+  digitalWrite(cardMotorIn2, LOW);
+  analogWrite(cardMotorPin, baseMotorSpeed);
+  delay(50);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
+  DisableMotors();
 }
 
 int RotateBase(float rotDegrees) {
   // rotate base motor by rotDegrees (use encoder values to determine the degree spun)
   float encValChange = (rotDegrees/degEncRatio);
   int prevCount = baseMotorCount;
+
+  // test
   Serial.println(prevCount);
   Serial.print("Rotating ");
   Serial.println(rotDegrees);
   Serial.print("Encoder value change: ");
   Serial.println(round(encValChange));
+
   if (rotDegrees > 0.0) {
     while(baseMotorCount<prevCount+round(encValChange)-encValError) {
       TurnCW();
@@ -222,6 +245,8 @@ void TurnCCW(void){
 void DisableMotors(void){
   digitalWrite(baseMotorIn1, LOW);
   digitalWrite(baseMotorIn2, LOW);
+  digitalWrite(cardMotorIn1, LOW);
+  digitalWrite(cardMotorIn2, LOW);
 }
 
 int MovePlatform(float rotDegrees){

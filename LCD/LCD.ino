@@ -46,26 +46,41 @@
 
 // initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+const int rs = 4, en = 6, d4 = 10, d5 = 11, d6 = 12, d7 = 13;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+byte a = 0;
 
 void setup() {
   Wire.begin(4);                  // join i2c bus with address 4
   Wire.onReceive(receiveEvent);   // register event
   Serial.begin(9600);             // start serial for output
   
-  lcd.begin(20,4);
+  lcd.begin(20, 4);
   
   /* ---Tutorial sample code--- 
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("hello, world!");
+  
   */
+  lcd.print("Hi! I am KIRBY. ");
 }
 
 void loop() {
+  /* test display
+  lcd.setCursor(0,1);
+  lcd.print(millis()/1000);
   
+  lcd.setCursor(0,2);
+  lcd.print("hello world");
+  Serial.println("hello world");
+  delay(5000);
+  lcd.setCursor(0,2);
+  lcd.print("goodbye world");
+  Serial.println("goodbye world");
+  delay(5000);
+  */
   
   /* ---Tutorial sample code---
   // set the cursor to column 0, line 1
@@ -78,19 +93,48 @@ void loop() {
 
 void receiveEvent(int num) {
   String message="";
-  
-  // print stuff
+  char firstChar="";
+
+  // Holds first character - determines which row to print on LCD
+  if (Wire.available()) {
+    firstChar = Wire.read();
+    message.concat(String(firstChar));
+    Serial.print(firstChar);
+  }
+  // while loop: receives Cards dealt, Game, or Players
   while (Wire.available() > 1) {
     char c = Wire.read();
-    message += c;
+    message.concat(String(c));
     Serial.print(c);
   }
-  int x = Wire.read();
-  message += char(x);
-  Serial.println(x);
+  
+  // depending on first char received (C, G or P) do something different
+  if (firstChar == 'C') {
+    int x = Wire.read();
+    message.concat(String(x));
+    Serial.println(x);
 
-  lcd.print(message);
+    lcd.setCursor(0,3);
+    lcd.print(message);
+    
+  } else if (firstChar == 'G') {
+    char y = Wire.read();
+    message.concat(String(y));
+    Serial.println(y);
+    
+    lcd.setCursor(0,1);
+    lcd.print(message);
+  } else if (firstChar == 'P') {
+    int x = Wire.read();
+    message.concat(String(x));
+    Serial.println(x);
+    
+    lcd.setCursor(0,2);
+    lcd.print(message);
+  }
+  
 
 }
 
+// SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame)
 // https://docs.arduino.cc/learn/communication/wire/
