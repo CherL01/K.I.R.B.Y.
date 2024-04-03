@@ -1,5 +1,27 @@
 #include <Wire.h>
 #include <Servo.h>
+#include "index.h"
+#include "ArduinoGraphics.h"
+#include <WiFiS3.h>
+#include "pitches.h"
+#include <ezBuzzer.h>
+
+//---WIFI PARAMETERS---
+char ssid[] = "KIRBY"; //Enter your WIFI SSID
+char pass[] = "123456789!";   //Enter your WIFI password
+int keyIndex = 0;      // your network key index number (needed only for WEP)
+String header; // read index from html page
+String page = DEFAULT_PAGE; //set html page to default
+
+int status = WL_IDLE_STATUS; //Wifi Status
+WiFiServer server(80); //initialize wifi server
+
+//---TIMEOUT VARIABLES---
+unsigned long currentTime = millis(); //current time
+unsigned long previousTime = 0; //previous time
+
+const long timeoutTime = 2000; //define timeout time
+
 
 // Define pins
 
@@ -36,19 +58,51 @@ int RotateBase(float rotDegrees);
 int MovePlatform(float rotDegrees);
 int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame);
 
+void checkGame(String gameType);
+
+int eStopLCD();
+
 void TurnCW(void);
 void TurnCCW(void);
 
-String gameType;
+void webServer();
+void printWifiStatus();
+
+String gameType = "None";
 
 void setup() {
   // Initialize motors and interrupts
   InitMotors();
   InitInterrupts();
 
-  // Initialize Serial communication
+    // Initialize Serial communication
   Serial.begin(9600);
   Wire.begin();             // join i2c bus
+
+  //---SETTING UP WIFI---//
+  
+  // Check for the WiFi module:
+  if (WiFi.status() == WL_NO_MODULE) {
+    Serial.println("Communication with WiFi module failed!");
+    // don't continue
+    while (true);
+  }
+  // Check for latest Wifi firmware version
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION) {
+    Serial.println("Please upgrade the firmware");
+  }
+
+  // Attempt to connect to WiFi network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Network named: ");
+    Serial.println(ssid);
+
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+    // wait 10 seconds for connection:
+    delay(10000);
+  }
 
   Serial.setTimeout(50);
   delay(100);
@@ -113,7 +167,7 @@ void InitMotors(void){
   pinMode(cardMotorIn2, OUTPUT);
 
   // Servo motor setup
-  platformServo.write(180);     // set default position?
+  PlatformServo.write(180);     // set default position?
   PlatformServo.attach(3);       // need pwm pin
 }
 
@@ -172,6 +226,15 @@ int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
     Wire.write("Cards dealt: ");
     Wire.write(byte(cardsDealt));
   }
+
+  Wire.endTransmission();
+  delay(500);
+}
+
+int eStopLCD()
+{
+  Wire.beginTransmission(4);
+  Wire.write("Stopped Dealing");
 
   Wire.endTransmission();
   delay(500);
@@ -264,4 +327,176 @@ int MovePlatform(float rotDegrees){
   }
   delay(2000);
   return rotDegrees;
+}
+
+void checkGame(String gameType) //games: uno, blackJack, crazy8, poker
+{
+  if (gameType.indexOf("uno") == 0)
+  {
+    Serial.println("Dealing uno");
+  }
+}
+
+//---Wifi Functions---//
+
+void printWifiStatus() {
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // print your board's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+
+  // print the received signal strength:
+  long rssi = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
+  // print where to go in a browser:
+  Serial.print("Now open this URL on your browser --> http://");
+  Serial.print(ip);
+  Serial.print("/default");
+}
+
+void webServer() {
+  WiFiClient client = server.available();   // Listen for incoming clients
+  if (client) {                             // If a new client connects,
+
+    String currentLine = "";                // make a String to hold incoming data from the client
+    currentTime = millis();
+    previousTime = currentTime;
+    while (client.connected() && currentTime - previousTime <= timeoutTime) { // loop while the client's connected
+      currentTime = millis();
+      if (client.available()) {             // if there's bytes to read from the client,
+        Serial.println("NEW ACTION PROMPTED!");          // print a message out in the serial port
+        header = client.readStringUntil('\n');          // read a byte & add to header
+        Serial.println(header);
+        break;
+      }
+    }
+
+    if (header.indexOf("GET /on") >=0) // running state, display settings with emergency button
+    {
+      Serial.println("Running!");
+      page = String(ON_PAGE);
+      
+      Serial.println(cardSpeed);
+      Serial.println(numPlayers);
+      page.replace("CARD_SPEED", String(cardSpeed));
+      page.replace("NUM_OF_PLAYERS", String(numPlayers));
+      page.replace("GAME_TYPE", gameType);
+
+      //----------------------Deal cards HERE
+    }
+    
+    else if (header.indexOf("GET /default") >=0)
+    {
+      Serial.println("Default Page!"); // starting page to set up speed, etc
+      page = String(DEFAULT_PAGE);
+
+      cardSpeed = 5; //default cardspeed and numplayers
+      numPlayers = 2;
+      gameType = "UNO";
+      //----------------------Starting Page HERE (Stop)
+
+      DisableMotors();
+      eStopLCD();
+      
+    }
+    else if (header.indexOf("GET /speed") >= 0) //access index of header to get the speed/#of players/game type values.
+    {
+      //initiate variables to access speed, #of players, and game type
+      int speedStart = header.indexOf("/speed");
+      int playerStart = header.indexOf("/players");
+      int gameStart = header.indexOf("/game");
+      int httpStart = header.indexOf(" HTTP/");
+
+      //iterate thru header to get card dealing speed
+      Serial.print("This is speed(6): ");
+      if (isDigit(header.charAt(speedStart+6))) 
+      {
+        String temp = "";
+        for (int i=speedStart+6; i<playerStart; i++)
+        {
+          temp += String(header.charAt(i));
+        }
+        cardSpeed = temp.toInt();
+      }
+      Serial.println(cardSpeed);
+
+      
+      //iterate thru header to get # of players
+      Serial.print("This is number of players(3): ");
+      if (isDigit(header.charAt(playerStart+8))) 
+      {
+        String temp = "";
+        for (int i=playerStart+8; i<gameStart; i++)
+        {
+          temp += String(header.charAt(i));
+        }
+        numPlayers = temp.toInt();
+      }
+      
+      Serial.println(numPlayers);
+
+      //iterate thru header to get game type
+      Serial.print("This is game type: ");
+      if (header.charAt(gameStart+5)) 
+      {
+        String temp = "";
+        for (int i=gameStart+5; i<httpStart; i++)
+        {
+          temp += String(header.charAt(i));
+        }
+        gameType = temp;
+      }
+      
+      Serial.println(gameType);
+      
+      page = String(START_PAGE);
+      //----------------------Settting Page HERE
+      DisableMotors();
+      eStopLCD();
+    }
+
+    
+    while (client.connected()) {
+      if (client.available()) {
+        header = client.readStringUntil('\n');  // read the header line of HTTP request
+
+        if (header.equals("\r"))  // the end of HTTP request
+          break;
+      }
+    }
+
+    
+
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: text/html");
+    client.println("Connection: close");  // the connection will be closed after completion of the response
+    client.println();                     // the separator between HTTP header and body
+
+    //print out page based on user input
+    String html = String(HTML_CONTENT1); //first part of html
+    client.println(html);
+
+    client.println(page); //page content bnased on user input
+    
+    html = String(HTML_CONTENT2); //last part of html
+    client.println(html);
+    
+    client.flush();
+
+    delay(10);
+
+    client.stop();
+    // Clear the header variable
+    header = "";
+    // Close the connection
+    client.stop();
+    Serial.println("END OF ACTION...");
+    Serial.println("");
+  }
 }

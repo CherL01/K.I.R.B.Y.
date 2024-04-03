@@ -90,6 +90,7 @@ void setup() {
 
 void loop() {
   webServer();
+  
 }
 
 
@@ -123,7 +124,6 @@ void webServer() {
       page.replace("NUM_OF_PLAYERS", String(numPlayers));
       page.replace("GAME_TYPE", gameType);
 
-      matrix.loadFrame(on);
       //----------------------Deal cards HERE
     }
     
@@ -135,8 +135,6 @@ void webServer() {
       cardSpeed = 5; //default cardspeed and numplayers
       numPlayers = 2;
       gameType = "UNO";
-
-      matrix.loadFrame(defaults);
       //----------------------Starting Page HERE
       
     }
@@ -191,8 +189,6 @@ void webServer() {
       Serial.println(gameType);
       
       page = String(START_PAGE);
-
-      matrix.loadFrame(setting);
       //----------------------Settting Page HERE
     }
 
