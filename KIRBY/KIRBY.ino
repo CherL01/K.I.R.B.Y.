@@ -52,7 +52,7 @@ void InitMotors(void);
 void InitInterrupts(void);
 void DisableMotors(void);
 int DealCards(int cardsPerHand, int numPlayers);
-int cardsPerHand, numPlayers=4, cardSpeed;
+int cardsPerHand, numPlayers=0, cardSpeed=0;
 void DealOneCard(void);
 int RotateBase(float rotDegrees);
 int MovePlatform(float rotDegrees);
@@ -65,8 +65,8 @@ int eStopLCD();
 void TurnCW(void);
 void TurnCCW(void);
 
-void webServer();
-void printWifiStatus();
+//void webServer();
+//void printWifiStatus();
 
 String gameType = "None";
 
@@ -103,11 +103,12 @@ void setup() {
     // wait 10 seconds for connection:
     delay(10000);
   }
+  server.begin();
 
   printWifiStatus();
   
 
-  Serial.setTimeout(50);
+  //Serial.setTimeout(50);
   delay(100);
 }
 
@@ -338,6 +339,7 @@ void checkGame(String gameType) //games: uno, blackJack, crazy8, poker
   if (gameType.indexOf("uno") == 0)
   {
     Serial.println("Dealing uno");
+    DealCards(2, 4);
   }
 }
 
@@ -394,6 +396,8 @@ void webServer() {
       page.replace("GAME_TYPE", gameType);
 
       //----------------------Deal cards HERE
+
+      
     }
     
     else if (header.indexOf("GET /default") >=0)
@@ -403,7 +407,7 @@ void webServer() {
 
       cardSpeed = 5; //default cardspeed and numplayers
       numPlayers = 2;
-      gameType = "UNO";
+      gameType = "None";
       //----------------------Starting Page HERE
       
     }
@@ -490,6 +494,7 @@ void webServer() {
     client.flush();
 
     delay(10);
+    checkGame(gameType);
 
     client.stop();
     // Clear the header variable
@@ -500,4 +505,3 @@ void webServer() {
     Serial.println("");
   }
 }
-
