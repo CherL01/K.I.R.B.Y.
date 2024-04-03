@@ -111,8 +111,9 @@ void setup() {
 void loop() {
   // get input from Harry's website page - need to figure this out
   // inputs: cardSpeed, numPlayers, gameType (poker, go fish, big 2, etc)
-
+  webServer();
   // testing
+  /*
   if (Serial.available()) {
     gameType = Serial.readString();
 
@@ -149,7 +150,7 @@ void loop() {
       MovePlatform(gameType.toInt());
     } else {
       Serial.println("Invalid gamemode. Please try again...");
-    }
+    }*/
     
   }
   delay(20);
