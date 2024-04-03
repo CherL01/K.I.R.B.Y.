@@ -206,14 +206,14 @@ int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
 
   } else {
     Wire.write("Game: ");
-    if (gameType.charAt(0) == 'p') {
+    if (gameType.indexOf("poker") == 0) {
       Wire.write("POKER");
-    } else if (gameType.charAt(0) == 'u') {
+    } else if (gameType.indexOf("uno") == 0) {
       Wire.write("UNO");
-    } else if (gameType.charAt(0) == 'b') {
-      Wire.write("BIG TWO");
-    } else if (gameType.charAt(0) == 'l') {
+    } else if (gameType.indexOf("blackJack") == 0) {
       Wire.write("BLACKJACK");
+    } else if (gameType.indexOf("bigtwo") == 0) {
+      Wire.write("BIG 2");
     }
     Wire.endTransmission();
     
@@ -389,6 +389,7 @@ void webServer() {
       page.replace("GAME_TYPE", gameType);
 
       //----------------------Deal cards HERE
+      checkGame();
     }
     
     else if (header.indexOf("GET /default") >=0)

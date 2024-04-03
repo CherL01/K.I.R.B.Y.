@@ -61,7 +61,7 @@ const char *DEFAULT_PAGE = R""""(
     <select name="gameType" id="gameType" required>
       <option value="uno">UNO<option>
       <option value="blackJack">Black Jack<option>
-      <option value="crazy8">Crazy 8's<option>
+      <option value="bigTwo">Big 2's<option>
       <option value="poker">Poker<option>
       <option value="cheat">Cheat<option>
     </select><br>
