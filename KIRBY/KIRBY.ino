@@ -6,6 +6,46 @@
 #include "pitches.h"
 #include <ezBuzzer.h>
 
+//---BUZZER PARAMETERS---//
+
+const int musicPin = 8;
+
+ezBuzzer buzzer(musicPin);
+
+int noteIndex;
+int noteLength;
+
+// Dealing Melody: KIRBY Dreamland Theme song
+int dealMelody[] = {
+  NOTE_E5, 0, NOTE_D5, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_E4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, NOTE_E4, NOTE_A4, 0,
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_C5, NOTE_B4, NOTE_A4, 0, NOTE_A4, NOTE_B4, NOTE_C5, NOTE_A4, NOTE_G4, NOTE_A4, NOTE_E4, 0, 
+  NOTE_A5, 0, NOTE_E5, 0, NOTE_B4, NOTE_D5, NOTE_E5, NOTE_A4, NOTE_B4, NOTE_D5, NOTE_B4, NOTE_G4, NOTE_A4, 0
+};
+
+// Dealing melody note durations: 4 = quarter note, 8 = eighth note, etc.:
+int dealNoteDurations[] = {
+  8, 16384, 16, 16, 16, 16, 8, 16, 16, 16, 16, 8, 8,          
+  8, 6, 8, 6, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+  8, 6, 8, 6, 8, 8, 8, 16, 16, 8, 8, 8, 8, 8, 8, 8, 8,
+  8, 6, 8, 6, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+  8, 6, 8, 6, 8, 8, 8, 8, 8, 8, 8, 8, 4, 4 
+};
+
+// End Melody: KIRBY Victory song
+int endMelody[] = {
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, 0, NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, 0, NOTE_E5, 0, 
+  NOTE_F5, NOTE_G5, NOTE_A5, NOTE_B5, NOTE_A5, NOTE_B5, NOTE_C6, NOTE_G5, NOTE_E5, NOTE_G5, NOTE_F5, NOTE_E5, NOTE_D5, NOTE_E5, NOTE_C5, NOTE_C6, 0  
+
+};
+
+// End melody note durations: 4 = quarter note, 8 = eighth note, etc.:
+int endNoteDurations[] = {
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 8, 8, 8, 8, 8, 8, 4, 8, 4, 8,
+  8, 8, 8, 8, 8, 8, 4, 8, 4, 8, 4, 8, 4, 8, 3, 8, 4
+};
+
 //---WIFI PARAMETERS---
 char ssid[] = "KIRBY"; //Enter your WIFI SSID
 char pass[] = "123456789!";   //Enter your WIFI password
@@ -495,9 +535,10 @@ void webServer() {
     client.flush();
 
     delay(10);
-    //if (header.indexOf("GET /on") >=0){
-    checkGame(gameType);
-    //}
+    if (page.indexOf("<h1>Game:") >= 0){ //page is ON_PAGE
+      //checkGame(gameType);
+      Serial.println("Now run cards!");
+    }
     client.stop();
     // Clear the header variable
     header = "";
@@ -506,4 +547,40 @@ void webServer() {
     Serial.println("END OF ACTION...");
     Serial.println("");
   }
+}
+
+void musicDeal() //play music during dealing
+{
+  buzzer.loop();
+  noteLength = sizeof(dealNoteDurations) /sizeof(int);
+
+  if (buzzer.getState() == BUZZER_IDLE)
+  {
+    buzzer.playMelody(dealMelody, dealNoteDurations, noteLength);
+  }
+}
+
+void musicEnd() //play music when done dealing
+{
+  for (noteIndex = 0; noteIndex < sizeof(endMelody); noteIndex++) 
+  {
+    
+    int noteDuration = 1000 / endNoteDurations[noteIndex];
+    tone(musicPin, endMelody[noteIndex], noteDuration);
+
+    // to distinguish the notes, set a minimum time between them.
+    // the note's duration + 30% seems to work well:
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    // stop the tone playing:
+    noTone(musicPin);
+  }
+
+//  buzzer.loop(); //try without looping or use the previous code for 1 iteration of melody
+//  noteLength = sizeof(endNoteDurations) /sizeof(int);
+//
+//  if (buzzer.getState() == BUZZER_IDLE)
+//  {
+//    buzzer.playMelody(endMelody, endNoteDurations, noteLength);
+//  }
 }
