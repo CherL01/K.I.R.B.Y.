@@ -144,8 +144,14 @@ void setup() {
     delay(10000);
   }
   server.begin();
-
   printWifiStatus();
+  if (Serial.available()>0)
+  {
+    int inComing = Serial.read();
+    if (inComing)
+    {
+    }
+  }
   
 
   //Serial.setTimeout(50);
@@ -380,7 +386,25 @@ void checkGame(String gameType) //games: uno, blackJack, crazy8, poker
   if (gameType.indexOf("uno") == 0)
   {
     Serial.println("Dealing uno");
-    DealCards(6, 4);
+    DealCards(7, numPlayers);
+  }
+
+  else if (gameType.indexOf("blackJack") == 0)
+  {
+    Serial.println("Dealing Black Jack");
+    DealCards(2, numPlayers);
+  }
+
+  else if (gameType.indexOf("bigTwo") == 0)
+  {
+    Serial.println("Dealing Big 2");
+    DealCards(13, numPlayers);
+  }
+
+  else if (gameType.indexOf("poker") == 0)
+  {
+    Serial.println("Dealing Big 2");
+    DealCards(2, numPlayers);
   }
 }
 
@@ -535,11 +559,15 @@ void webServer() {
     client.flush();
 
     delay(10);
-    if (page.indexOf("<h1>Game:") >= 0){ //page is ON_PAGE
-      //checkGame(gameType);
-      Serial.println("Now run cards!");
-    }
+    
     client.stop();
+    if (page.indexOf("<h1>Game:") >= 0){ //page is ON_PAGE
+      Serial.println("Now run cards!");
+      //checkGame(gameType);
+      musicEnd();
+    }
+
+    
     // Clear the header variable
     header = "";
     // Close the connection
