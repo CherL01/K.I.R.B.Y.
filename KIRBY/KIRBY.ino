@@ -5,10 +5,11 @@
 #include <WiFiS3.h>
 #include "pitches.h"
 #include <ezBuzzer.h>
+#include <LiquidCrystal.h>
 
 //---BUZZER PARAMETERS---//
 
-const int musicPin = 8;
+const int musicPin = 4;
 
 ezBuzzer buzzer(musicPin);
 
@@ -62,7 +63,6 @@ unsigned long previousTime = 0; //previous time
 
 const long timeoutTime = 2000; //define timeout time
 
-
 // Define pins
 
 // Define servo motor
@@ -76,16 +76,22 @@ int baseEncA=2;         // need interrupt pin
 int baseEncB=9;         // no pwm
 
 int cardMotorPin=6;     // pwm
-int cardMotorIn1=7;     // no pwm -------------- direction pin (needed)
-int cardMotorIn2=8;     // no pwm -------------- direction pin (needed)
-int cardEncA=4;         // need interrupt pin -- enc values not really needed - needed if turning motor on and off too inconsistent
-int cardEncB=5;         // no pwm -------------- enc values not really needed
+int cardMotorIn3=7;     // no pwm -------------- direction pin (needed)
+int cardMotorIn4=8;     // no pwm -------------- direction pin (needed)
+//int cardEncA=3;         // need interrupt pin -- enc values not really needed - needed if turning motor on and off too inconsistent
+//int cardEncB=13;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
-int baseMotorSpeed = 80;           // Speed of motor 0-255
-int cardMotorSpeed = 80;           // Speed of motor 0-255
+int baseMotorSpeed = 255;           // Speed of motor 0-255
+int cardMotorSpeed = 255;           // Speed of motor 0-255
 float degEncRatio = 1.8;     // 360 deg / 200 enc -> 1.8 deg per enc val
 int encValError = 6;
+
+// Define lcd pin connections
+const int rs = 0, en = 1, d4 = 3, d5 = 4, d6 = 5, d7 = 13;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+byte a = 0;
 
 // Define functions
 void InitMotors(void);
@@ -105,8 +111,8 @@ int eStopLCD();
 void TurnCW(void);
 void TurnCCW(void);
 
-//void webServer();
-//void printWifiStatus();
+void webServer();
+void printWifiStatus();
 
 String gameType = "None";
 
@@ -117,7 +123,9 @@ void setup() {
 
     // Initialize Serial communication
   Serial.begin(9600);
-  Wire.begin();             // join i2c bus
+  // Wire.begin();             // join i2c bus
+  lcd.begin(20, 4);
+  lcd.print("Hi! I am KIRBY. <3");
 
   //---SETTING UP WIFI---//
   
@@ -214,12 +222,12 @@ void InitMotors(void){
   pinMode(baseMotorIn1, OUTPUT);
   pinMode(baseMotorIn2, OUTPUT);
   pinMode(cardMotorPin, OUTPUT);
-  pinMode(cardMotorIn1, OUTPUT);
-  pinMode(cardMotorIn2, OUTPUT);
+  pinMode(cardMotorIn3, OUTPUT);
+  pinMode(cardMotorIn4, OUTPUT);
 
   // Servo motor setup
-  PlatformServo.write(180);     // set default position?
-  PlatformServo.attach(3);       // need pwm pin
+  PlatformServo.attach(5);       // need pwm pin
+  PlatformServo.write(50);     // set default position. 0 doesn't work, so we use 1
 }
 
 void InitInterrupts(void){
@@ -247,38 +255,27 @@ void EncoderEvent() {
 int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
   // Update the LCD as cards are being dealt. If there is a new game, also update name of game 
   // Input: cardsDealt, numPlayers, gameType, sameGame
-  // Output: LCD gets text that is sent between beginTransmission to endTransmission
-
-  Wire.beginTransmission(4);          // transmit to device address #4
+  // Output: print on LCD
   
   if (sameGame) {
-    Wire.write("Cards dealt: ");        // sends 13(?) bytes
-    Wire.write(byte(cardsDealt));             // sends 1 byte
+    // Wire.write("Cards dealt: ");        // sends 13(?) bytes
+    // Wire.write(byte(cardsDealt));             // sends 1 byte
+
+    lcd.setCursor(0,3);
+    lcd.print("Cards dealt: "+cardsDealt);
 
   } else {
-    Wire.write("Game: ");
-    if (gameType.indexOf("poker") == 0) {
-      Wire.write("POKER");
-    } else if (gameType.indexOf("uno") == 0) {
-      Wire.write("UNO");
-    } else if (gameType.indexOf("blackJack") == 0) {
-      Wire.write("BLACKJACK");
-    } else if (gameType.indexOf("bigtwo") == 0) {
-      Wire.write("BIG 2");
-    }
-    Wire.endTransmission();
+    // Wire.write("Game: ");
+    lcd.setCursor(0,1);
+    lcd.print("Game: "+gameType);
     
-    Wire.beginTransmission(4);
-    Wire.write("Players: ");
-    Wire.write(byte(numPlayers));
-    Wire.endTransmission();
+    lcd.setCursor(0,2);
+    lcd.print("Players: "+numPlayers);
     
-    Wire.beginTransmission(4);
-    Wire.write("Cards dealt: ");
-    Wire.write(byte(cardsDealt));
+    lcd.setCursor(0,1);
+    lcd.print("Cards dealt: "+cardsDealt);
   }
 
-  Wire.endTransmission();
   delay(500);
 }
 
@@ -294,15 +291,15 @@ int eStopLCD()
 int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
   // Iterate for each card needed to be dealt
-  SendLCD(0,numPlayers,gameType,false);
+  //SendLCD(0,numPlayers,gameType,false);
   for (int i=0; i<cardsPerHand; i++){
-    SendLCD(i,numPlayers,gameType,true);
+    //SendLCD(i,numPlayers,gameType,true);
 
     // Iterate for each player
     for (int j=0; j<numPlayers; j++) {
       RotateBase(360/numPlayers);
       DealOneCard();
-      delay(400);
+      delay(600);
 //      Serial.print("card(s) dealt: ");
 //      Serial.println(j);
     } 
@@ -311,10 +308,10 @@ int DealCards(int cardsPerHand, int numPlayers) {
 
 void DealOneCard(void) {
   // spin the card motor to shoot one card out, delay, then turn off.
-  digitalWrite(cardMotorIn1, HIGH);
-  digitalWrite(cardMotorIn2, LOW);
+  digitalWrite(cardMotorIn3, HIGH);
+  digitalWrite(cardMotorIn4, LOW);
   analogWrite(cardMotorPin, baseMotorSpeed);
-  delay(50);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
+  delay(100);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
   DisableMotors();
 }
 
@@ -360,25 +357,25 @@ void TurnCCW(void){
 void DisableMotors(void){
   digitalWrite(baseMotorIn1, LOW);
   digitalWrite(baseMotorIn2, LOW);
-  digitalWrite(cardMotorIn1, LOW);
-  digitalWrite(cardMotorIn2, LOW);
+  digitalWrite(cardMotorIn3, LOW);
+  digitalWrite(cardMotorIn4, LOW);
 }
 
 int MovePlatform(float rotDegrees){
-  for (int pos=0; pos<=180; pos+=1){
-    PlatformServo.write(pos);
-    delay(15);
-    Serial.print("Servo pos: ");
-    Serial.println(pos);
-  }
-  for (int pos=180; pos>=0; pos-=1){
-    PlatformServo.write(pos);
-    delay(15);
-    Serial.print("Servo pos: ");
-    Serial.println(pos);
-  }
-  delay(2000);
-  return rotDegrees;
+//  for (int pos=0; pos<=180; pos+=1){
+//    PlatformServo.write(pos);
+//    delay(15);
+//    Serial.print("Servo pos: ");
+//    Serial.println(pos);
+//  }
+//  for (int pos=180; pos>=0; pos-=1){
+//    PlatformServo.write(pos);
+//    delay(15);
+//    Serial.print("Servo pos: ");
+//    Serial.println(pos);
+//  }
+//  delay(2000);
+//  return rotDegrees;
 }
 
 void checkGame(String gameType) //games: uno, blackJack, crazy8, poker
@@ -563,7 +560,7 @@ void webServer() {
     client.stop();
     if (page.indexOf("<h1>Game:") >= 0){ //page is ON_PAGE
       Serial.println("Now run cards!");
-      //checkGame(gameType);
+      checkGame(gameType);
       musicEnd();
     }
 
