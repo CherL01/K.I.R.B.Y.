@@ -9,7 +9,7 @@
 
 //---BUZZER PARAMETERS---//
 
-const int musicPin = 4;
+const int musicPin = A0;
 
 ezBuzzer buzzer(musicPin);
 
@@ -82,7 +82,7 @@ int cardMotorIn4=8;     // no pwm -------------- direction pin (needed)
 //int cardEncB=13;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
-int baseMotorSpeed = 255;           // Speed of motor 0-255
+int baseMotorSpeed = 200;           // Speed of motor 0-255
 int cardMotorSpeed = 255;           // Speed of motor 0-255
 float degEncRatio = 1.8;     // 360 deg / 200 enc -> 1.8 deg per enc val
 int encValError = 6;
@@ -124,8 +124,10 @@ void setup() {
     // Initialize Serial communication
   Serial.begin(9600);
   // Wire.begin();             // join i2c bus
-  lcd.begin(20, 4);
-  lcd.print("Hi! I am KIRBY. <3");
+  lcd.begin(16, 2);
+  lcd.print("I am   KIRBY <3");
+//  lcd.setCursor(0,1);
+//  lcd.print("POKER 4P Cards:5");
 
   //---SETTING UP WIFI---//
   
@@ -261,19 +263,19 @@ int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
     // Wire.write("Cards dealt: ");        // sends 13(?) bytes
     // Wire.write(byte(cardsDealt));             // sends 1 byte
 
-    lcd.setCursor(0,3);
-    lcd.print("Cards dealt: "+cardsDealt);
+    lcd.setCursor(10,1);
+    lcd.print("Cards:"+cardsDealt);
 
   } else {
     // Wire.write("Game: ");
     lcd.setCursor(0,1);
-    lcd.print("Game: "+gameType);
+    lcd.print(gameType+" ");
     
-    lcd.setCursor(0,2);
-    lcd.print("Players: "+numPlayers);
+    lcd.setCursor(6,1);
+    lcd.print(String(numPlayers)+"P ");
     
-    lcd.setCursor(0,1);
-    lcd.print("Cards dealt: "+cardsDealt);
+    lcd.setCursor(10,1);
+    lcd.print("Cards:"+String(cardsDealt));
   }
 
   delay(500);
@@ -308,10 +310,10 @@ int DealCards(int cardsPerHand, int numPlayers) {
 
 void DealOneCard(void) {
   // spin the card motor to shoot one card out, delay, then turn off.
-  digitalWrite(cardMotorIn3, HIGH);
-  digitalWrite(cardMotorIn4, LOW);
+  digitalWrite(cardMotorIn3, LOW);
+  digitalWrite(cardMotorIn4, HIGH);
   analogWrite(cardMotorPin, baseMotorSpeed);
-  delay(100);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
+  delay(200);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
   DisableMotors();
 }
 
