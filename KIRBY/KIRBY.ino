@@ -66,7 +66,7 @@ const long timeoutTime = 2000; //define timeout time
 // Define pins
 
 // Define servo motor
-Servo PlatformServo;
+// Servo PlatformServo;
 
 // Define DC motor connections
 int baseMotorPin=10;     // pwm
@@ -82,10 +82,11 @@ int cardMotorIn4=8;     // no pwm -------------- direction pin (needed)
 //int cardEncB=13;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
-int baseMotorSpeed = 200;           // Speed of motor 0-255
+int baseMotorSpeed = 240;           // Speed of motor 0-255
 int cardMotorSpeed = 255;           // Speed of motor 0-255
-float degEncRatio = 1.8;     // 360 deg / 200 enc -> 1.8 deg per enc val
-int encValError = 6;
+float degEncRatio = 1.9;     // 360 deg / 200 enc -> 1.8 deg per enc val
+int encValError = 18;
+int cardDealDelay = 350;
 
 // Define lcd pin connections
 const int rs = 0, en = 1, d4 = 3, d5 = 4, d6 = 5, d7 = 13;
@@ -124,8 +125,9 @@ void setup() {
     // Initialize Serial communication
   Serial.begin(9600);
   // Wire.begin();             // join i2c bus
+  // lcd.begin(20, 4);
   lcd.begin(16, 2);
-  lcd.print("I am   KIRBY <3");
+  lcd.print("Hi I am KIRBY");
 //  lcd.setCursor(0,1);
 //  lcd.print("POKER 4P Cards:5");
 
@@ -228,8 +230,8 @@ void InitMotors(void){
   pinMode(cardMotorIn4, OUTPUT);
 
   // Servo motor setup
-  PlatformServo.attach(5);       // need pwm pin
-  PlatformServo.write(50);     // set default position. 0 doesn't work, so we use 1
+  //PlatformServo.attach(5);       // need pwm pin
+  //PlatformServo.write(50);     // set default position. 0 doesn't work, so we use 1
 }
 
 void InitInterrupts(void){
@@ -263,19 +265,20 @@ int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
     // Wire.write("Cards dealt: ");        // sends 13(?) bytes
     // Wire.write(byte(cardsDealt));             // sends 1 byte
 
-    lcd.setCursor(10,1);
-    lcd.print("Cards:"+cardsDealt);
-
+    //lcd.setCursor(0,3);
+    lcd.setCursor(9,1);
+    lcd.print("Card "+String(cardsDealt));
+    
   } else {
     // Wire.write("Game: ");
     lcd.setCursor(0,1);
-    lcd.print(gameType+" ");
+    lcd.print(gameType);
     
     lcd.setCursor(6,1);
-    lcd.print(String(numPlayers)+"P ");
+    lcd.print(String(numPlayers)+"P");
     
-    lcd.setCursor(10,1);
-    lcd.print("Cards:"+String(cardsDealt));
+    lcd.setCursor(9,1);
+    lcd.print("Card "+String(cardsDealt));
   }
 
   delay(500);
@@ -283,19 +286,21 @@ int SendLCD(int cardsDealt, int numPlayers, String gameType, bool sameGame){
 
 int eStopLCD()
 {
-  Wire.beginTransmission(4);
-  Wire.write("Stopped Dealing");
-
-  Wire.endTransmission();
+//  Wire.beginTransmission(4);
+//  Wire.write("Stopped Dealing");
+//
+//  Wire.endTransmission();
+  lcd.setCursor(0,1);
+  lcd.print("Stopped Dealing");
   delay(500);
 }
 
 int DealCards(int cardsPerHand, int numPlayers) {
   // Input: number of cards to deal, number of players
   // Iterate for each card needed to be dealt
-  //SendLCD(0,numPlayers,gameType,false);
+  SendLCD(0,numPlayers,gameType,false);
   for (int i=0; i<cardsPerHand; i++){
-    //SendLCD(i,numPlayers,gameType,true);
+    SendLCD(i,numPlayers,gameType,true);
 
     // Iterate for each player
     for (int j=0; j<numPlayers; j++) {
@@ -306,14 +311,15 @@ int DealCards(int cardsPerHand, int numPlayers) {
 //      Serial.println(j);
     } 
   }
+  SendLCD(cardsPerHand,numPlayers,gameType,true);
 }
 
 void DealOneCard(void) {
   // spin the card motor to shoot one card out, delay, then turn off.
   digitalWrite(cardMotorIn3, LOW);
   digitalWrite(cardMotorIn4, HIGH);
-  analogWrite(cardMotorPin, baseMotorSpeed);
-  delay(200);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
+  analogWrite(cardMotorPin, cardMotorSpeed);
+  delay(cardDealDelay);        // Changeable value - time the motor turns to deal 1 card. Should be relatively short.
   DisableMotors();
 }
 
