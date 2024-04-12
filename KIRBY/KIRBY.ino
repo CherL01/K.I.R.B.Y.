@@ -9,7 +9,7 @@
 
 //---BUZZER PARAMETERS---//
 
-const int musicPin = A0;
+const int musicPin = A5;
 
 ezBuzzer buzzer(musicPin);
 
@@ -82,11 +82,11 @@ int cardMotorIn4=8;     // no pwm -------------- direction pin (needed)
 //int cardEncB=13;         // no pwm -------------- enc values not really needed
 
 volatile long baseMotorCount = 0;
-int baseMotorSpeed = 240;           // Speed of motor 0-255
+int baseMotorSpeed = 255;           // Speed of motor 0-255
 int cardMotorSpeed = 255;           // Speed of motor 0-255
-float degEncRatio = 1.9;     // 360 deg / 200 enc -> 1.8 deg per enc val
-int encValError = 18;
-int cardDealDelay = 350;
+float degEncRatio = 1.9;     // 360 deg / 200 enc -> 1.8 deg per enc val (1.9 for 4 ppl)
+int encValError = 16;
+int cardDealDelay = 275;
 
 // Define lcd pin connections
 const int rs = 0, en = 1, d4 = 3, d5 = 4, d6 = 5, d7 = 13;
